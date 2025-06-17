@@ -1,10 +1,11 @@
-﻿using Core.Trade;
+﻿using Core.BrokerageCsv;
+using Core.Trade;
 using CsvParser = Core.Parser.CsvParser;
 
 
 string path =
     "/Users/devalparikh/Documents/Github/BrokerageCsvParser/Core/Data/071a529a-878c-544a-8363-1f7350bffe78.csv";
-List<TradeActivity> trades = CsvParser.Load(path);
+List<TradeActivity> trades = CsvParser.Load<RobinHoodCsvUtils>(path);
 trades.Reverse();
 
 Portfolio portfolio = new Portfolio();
@@ -145,52 +146,6 @@ class SharePosition
         RealizedPnL += realizedPnL;
         return realizedPnL;
     }
-
-//     public decimal Sell(decimal quantityToSell, decimal salePricePerShare)
-//     {
-//         if (quantityToSell <= 0) throw new ArgumentOutOfRangeException(nameof(quantityToSell));
-//         if (salePricePerShare <= 0) throw new ArgumentOutOfRangeException(nameof(salePricePerShare));
-//
-//         // Robinhood free stock doesn't export 
-//         //if (quantityToSell > Quantity) throw new InvalidOperationException("Not enough shares.");
-//
-//         decimal realizedPnL = 0;
-//         var node = taxLots.First;
-//         while (quantityToSell > 0 && node != null)
-//         {
-//             var lot = node.Value;
-//
-//             // max you can sell for this lot, is the lot itself
-//             decimal lotSellQty = Math.Min(quantityToSell, lot.Quantity!.Value);
-//             decimal lotCostBasis = lot.Price!.Value;
-//             decimal proceeds = salePricePerShare * lotSellQty;
-//             decimal cost = lotCostBasis * lotSellQty;
-//             realizedPnL += proceeds - cost;
-//
-//             Quantity -= lotSellQty;
-//             TotalCost -= cost;
-//
-//             bool isEntireLotSold = lotSellQty == lot.Quantity;
-//             if (isEntireLotSold)
-//             {
-//                 // Remove entire lot
-//                 var next = node.Next;
-//                 taxLots.Remove(node);
-//                 node = next;
-//             }
-//             else
-//             {
-//                 // Partially consume the front lot
-//                 lot.Quantity -= lotSellQty;
-//                 node = node.Next;
-//             }
-//
-//             quantityToSell -= lotSellQty;
-//         }
-//
-//         RealizedPnL += realizedPnL;
-//         return realizedPnL;
-//     }
 }
 
 class OptionPosition
