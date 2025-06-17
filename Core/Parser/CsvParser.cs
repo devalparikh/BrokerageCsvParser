@@ -1,8 +1,5 @@
-using System.Globalization;
 using Core.BrokerageCsv;
 using Core.Trade;
-using CsvHelper;
-using CsvHelper.Configuration;
 
 namespace Core.Parser;
 

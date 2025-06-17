@@ -7,28 +7,37 @@ using CsvHelper.TypeConversion;
 
 namespace Core.BrokerageCsv;
 
-sealed record RobinhoodCsvRow
+internal sealed record RobinhoodCsvRow
 {
-    [Name("Activity Date")]  public DateTime? ActivityDate { get; set; }
+    [Name("Activity Date")]
+    public DateTime? ActivityDate { get; set; }
 
-    [Name("Process Date")]   public DateTime? ProcessDate { get; set; }
+    [Name("Process Date")]
+    public DateTime? ProcessDate { get; set; }
 
-    [Name("Settle Date")]    public DateTime? SettleDate  { get; set; }
+    [Name("Settle Date")]
+    public DateTime? SettleDate { get; set; }
 
-    [Name("Instrument")]     public string?  Instrument   { get; set; }
+    [Name("Instrument")]
+    public string? Instrument { get; set; }
 
-    [Name("Description")]    public string?  Description  { get; set; }
+    [Name("Description")] 
+    public string? Description { get; set; }
 
-    [Name("Trans Code")]     public string?  TransCode    { get; set; }
+    [Name("Trans Code")] 
+    public string? TransCode { get; set; }
 
-    [Name("Quantity"), TypeConverter(typeof(NullableDecimalConverter))]
+    [Name("Quantity")]
+    [TypeConverter(typeof(NullableDecimalConverter))]
     public decimal? Quantity { get; set; }
 
-    [Name("Price"),    TypeConverter(typeof(NullableDecimalConverter))]
-    public decimal? Price    { get; set; }
+    [Name("Price")]
+    [TypeConverter(typeof(NullableDecimalConverter))]
+    public decimal? Price { get; set; }
 
-    [Name("Amount"),   TypeConverter(typeof(NullableDecimalConverter))]
-    public decimal? Amount   { get; set; }
+    [Name("Amount")]
+    [TypeConverter(typeof(NullableDecimalConverter))]
+    public decimal? Amount { get; set; }
 }
 
 public class RobinHoodCsvUtils : BrokerageCsvUtils
@@ -37,15 +46,15 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
     {
         var csvConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture)
         {
-            HasHeaderRecord  = true,
+            HasHeaderRecord = true,
             IgnoreBlankLines = true,
-            BadDataFound     = null,  // swallow rows that still look broken
-            MissingFieldFound  = null,
-            Delimiter        = ","
+            BadDataFound = null, // swallow rows that still look broken
+            MissingFieldFound = null,
+            Delimiter = ","
         };
 
         using var reader = new StreamReader(csvPath);
-        using var csv    = new CsvReader(reader, csvConfiguration);
+        using var csv = new CsvReader(reader, csvConfiguration);
 
         // register converter once, so any nullable decimal field re‑uses it
         csv.Context.TypeConverterCache.AddConverter<decimal?>(new NullableDecimalConverter());
@@ -56,33 +65,33 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
             .Select(ToTradeActivity!)
             .ToList();
     }
-    
+
     private static TradeActivity ToTradeActivity(RobinhoodCsvRow r)
     {
         var activity = new TradeActivity
         {
-            Date     = r.ActivityDate!.Value,
-            Symbol   = r.Instrument,
-            Type     = MapActivityType(r.TransCode, r.Description),
+            Date = r.ActivityDate!.Value,
+            Symbol = r.Instrument,
+            Type = MapActivityType(r.TransCode, r.Description),
             Quantity = r.Quantity,
-            Price    = r.Price,
-            Amount   = r.Amount,
-            Notes    = r.Description
+            Price = r.Price,
+            Amount = r.Amount,
+            Notes = r.Description
         };
 
         if (TryParseOptionContract(r.Description, out var underlying, out var exp, out var strike, out var type))
         {
-            activity.IsOption     = true;
-            activity.Underlying   = underlying;
-            activity.Expiration   = exp;
-            activity.StrikePrice  = strike;
-            activity.OptionType   = type;
+            activity.IsOption = true;
+            activity.Underlying = underlying;
+            activity.Expiration = exp;
+            activity.StrikePrice = strike;
+            activity.OptionType = type;
         }
 
         return activity;
     }
-    
-        private static bool TryParseOptionContract(
+
+    private static bool TryParseOptionContract(
         string? description,
         out string? underlying,
         out DateTime? expiration,
@@ -91,13 +100,12 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
     {
         underlying = null;
         expiration = null;
-        strike     = null;
-        type       = null;
+        strike = null;
+        type = null;
 
         if (string.IsNullOrWhiteSpace(description))
             return false;
 
-        // Pattern: SYMBOL MM/DD/YYYY STRIKE TYPE
         var parts = description.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length != 4)
             return false;
@@ -110,12 +118,12 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
                 return false;
 
             expiration = date;
-            type       = parts[2].Equals("Call", StringComparison.OrdinalIgnoreCase)
+            type = parts[2].Equals("Call", StringComparison.OrdinalIgnoreCase)
                 ? OptionType.Call
                 : parts[2].Equals("Put", StringComparison.OrdinalIgnoreCase)
                     ? OptionType.Put
                     : null;
-            
+
             var strikeText = parts[3].Trim().TrimStart('$');
             strike = decimal.Parse(strikeText, NumberStyles.Any, CultureInfo.InvariantCulture);
             return type != null;
@@ -161,11 +169,11 @@ public sealed class NullableDecimalConverter : DefaultTypeConverter
             .Replace("$", string.Empty)
             .Replace(",", string.Empty);
 
-        bool negative = false;
+        var negative = false;
         if (text.StartsWith("(") && text.EndsWith(")"))
         {
             negative = true;
-            text = text[1..^1];              // drop the parentheses
+            text = text[1..^1]; // drop the parentheses
         }
 
         if (decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var val))
