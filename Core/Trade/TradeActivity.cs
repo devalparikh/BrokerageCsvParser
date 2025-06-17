@@ -1,20 +1,5 @@
 namespace Core.Trade;
 
-public enum ActivityType
-{
-    Unknown,
-    Buy,
-    Sell,
-    STO, // Sell to Open
-    BTC, // Buy to Close
-    Assignment,
-    Expired,
-    Dividend,
-    Interest,
-    Transfer,
-    Other
-}
-
 public record TradeActivity
 {
     public DateTime Date { get; set; }
@@ -31,6 +16,21 @@ public record TradeActivity
     public DateTime? Expiration { get; set; }
     public decimal? StrikePrice { get; set; }
     public OptionType? OptionType { get; set; }
+}
+
+public enum ActivityType
+{
+    Unknown,
+    Buy,
+    Sell,
+    STO, // Sell to Open
+    BTC, // Buy to Close
+    Assignment,
+    Expired,
+    Dividend,
+    Interest,
+    Transfer,
+    Other
 }
 
 public enum OptionType
