@@ -78,13 +78,25 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
             Amount = r.Amount,
             Notes = r.Description
         };
-
-        if (TryParseOptionContract(r.Description, out var underlying, out var exp, out var strike, out var type))
+        
+        if (TryParseOptionContract(
+                r.Description,
+                out var underlying,
+                out var exp,
+                out var contractStrike,
+                out var type) ||
+            activity.Type == ActivityType.Expired && TryParseExpirationDescription(
+                r.Description,
+                out underlying,
+                out exp,
+                out contractStrike,
+                out type)
+            )
         {
             activity.IsOption = true;
             activity.Underlying = underlying;
             activity.Expiration = exp;
-            activity.StrikePrice = strike;
+            activity.StrikePrice = contractStrike;
             activity.OptionType = type;
         }
 
@@ -133,6 +145,39 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
             return false;
         }
     }
+    
+    private static bool TryParseExpirationDescription(
+        string? description,
+        out string? underlying,
+        out DateTime? expiration,
+        out decimal? strike,
+        out OptionType? type)
+    {
+        // Initialise out-params
+        underlying = null;
+        expiration = null;
+        strike     = null;
+        type       = null;
+
+        // Expected prefix in Robinhood’s “expiration” rows
+        const string Prefix = "Option Expiration for ";
+
+        // Basic guards
+        if (string.IsNullOrWhiteSpace(description) ||
+            !description.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // Strip the prefix and delegate to the existing contract parser
+        var contractPart = description.Substring(Prefix.Length).Trim();
+
+        return TryParseOptionContract(
+            contractPart,
+            out underlying,
+            out expiration,
+            out strike,
+            out type);
+    }
+
 
     private static ActivityType MapActivityType(string? code, string? description)
     {
@@ -147,11 +192,13 @@ public class RobinHoodCsvUtils : BrokerageCsvUtils
             "BTC" => ActivityType.BTC,
             "OASGN" => ActivityType.Assignment,
             "EXP" => ActivityType.Expired,
+            "OEXP" => ActivityType.Expired,
             "DIV" => ActivityType.Dividend,
             "INT" => ActivityType.Interest,
             "XFER" => ActivityType.Transfer,
             _ when description?.Contains("assignment") == true => ActivityType.Assignment,
             _ when description?.Contains("expire") == true => ActivityType.Expired,
+            _ when description?.ToLower().Contains("expiration", StringComparison.CurrentCultureIgnoreCase) == true => ActivityType.Expired,
             _ when description?.Contains("dividend") == true => ActivityType.Dividend,
             _ => ActivityType.Unknown
         };

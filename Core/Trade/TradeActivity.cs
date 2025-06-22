@@ -16,6 +16,11 @@ public record TradeActivity
     public DateTime? Expiration { get; set; }
     public decimal? StrikePrice { get; set; }
     public OptionType? OptionType { get; set; }
+    
+    // TODO: is assigned
+    // TODO: is closed by expiring worthless
+    // TODO: is closed by buy to close
+    // TODO: close date
 }
 
 public enum ActivityType
